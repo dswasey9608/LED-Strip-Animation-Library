@@ -1,5 +1,7 @@
 #include <FastLED.h>
+
 //NOTE: CRGB assignment functions as CGRB for some reason.
+//Check 'addedUtils.cpp' to find functions used in this sketch
 
 //Scrolling Demo Working... Uses literal D3 pin on board, WS2812 working for assignment, some weird colors.
 
@@ -8,11 +10,12 @@
   //Need to experiment a little with those things.
 
 #define NUM_LEDS 150
-#define NUM_MODES 2
 
 CRGBArray<NUM_LEDS> leds;
 CRGBArray<NUM_LEDS> newColor;
 const int cycles = 6;
+addedUtils modder(leds, NUM_LEDS, cycles);
+
 //int interruptPin = D0; //see image in current directory (BaconSD C://Documents/Arduino/FastLEDProjects) to see Arduino's pinout mapping.
 
 void setup() { 
@@ -25,11 +28,11 @@ void setup() {
 }
 
 void loop(){
-//  scrollingRainbow();
+//  scrollingRainbow(); //too distracting for internal lights
 //  stripeScroll();
-//  stackLights();
-//  breathing();
-  randExplosions();
+  modder.stackLights(CRGB(0, 100, 0), CRGB(0, 0, 100), CRGB(100, 100, 100));
+  modder.breathing(true); //taking an absurdly long time to restart the loop... debug!!
+//  randExplosions();
 }
 
 //ICACHE_RAM_ATTR void handleInterrupt(){
@@ -45,55 +48,7 @@ void loop(){
 
 void scrollingRainbow(){
   fill_rainbow(leds, NUM_LEDS, 0, 7);
-  scroll();
-}
-
-void breathing(){ //cycles between all primary and secondary colors
-  int powerScale = 0;
-  int increment = 1;
-  bool upIncrement = true;
-  int colorNumber = 0;
-  int numCycles = 0;
-  bool firstCycle = true;
-  while(1){
-    if(numCycles == cycles + 1){
-      return;
-    }
-    CRGB color = colorSelector(colorNumber, powerScale);
-    for(int b = 0; b <= NUM_LEDS; b++){
-        leds[b] = color;
-    }
-    FastLED.show();
-    //Serial.println("Value of powerScale is: ");
-    //Serial.println(powerScale);
-    if(powerScale == 100){ //float comparison picks up random values and can never find an equivalence.
-      FastLED.delay(100);
-      upIncrement = false;
-    }
-    if(powerScale == 0){
-      if(!firstCycle){
-        colorNumber++;
-      }
-      if(colorNumber >= 6){
-        colorNumber = 0;
-      }
-      FastLED.delay(200);
-      upIncrement = true;
-      numCycles++;
-    }
-    else{
-      FastLED.delay(20);
-    }
-
-    if(upIncrement){
-      powerScale = powerScale + increment;
-    }
-    else{
-      powerScale = powerScale - increment;
-    }
-    firstCycle = false;
-   
-  }
+  modder.scroll(cycles);
 }
 
 void stripeScroll(){
@@ -130,103 +85,13 @@ void stripeScroll(){
     
   }
 }
-
-void stack(bool colorMeld){
-  int notLit = NUM_LEDS - 1; //accounts for odd numbers
-  int currentColor = 0;
-  bool stringFilled = false;
-  bool firstCycle = true;
-  fill_solid(leds, NUM_LEDS, CRGB(0, 0, 0));
-  while(!stringFilled){
-    for(int i = 0; i <= notLit / 2; i++){
-      switch(currentColor){
-        case 0: leds[i] = CRGB(47, 7, 39);
-        break;
-        case 1: leds[i] = CRGB(0, 100, 0);
-        break;
-        case 2: leds[i] = CRGB(0, 100, 100);
-        break;
-      }
-        if(i-3 >= 0){
-          if(i-3 < (notLit/2) - 2){ //determines how many LEDs to keep up, allowing the stack effect.
-          leds[i-3] = CRGB(0, 0, 0); //turn off anything that is no longer within two spaces behind i
-        }
-      }
-      leds(NUM_LEDS/2,NUM_LEDS-1) = leds(NUM_LEDS/2 - 1 ,0);
-      FastLED.show();
-    FastLED.delay(10);
-
-    if(colorMeld){
-      for(int j = (NUM_LEDS/2) - notLit; j <= NUM_LEDS; j++){
-        
-      }
-    }
-    }
-    currentColor++;
-    if(currentColor >= 3){
-      currentColor = 0;
-    }
-    FastLED.delay(500);
-    
-    notLit -= 6;
-    if(notLit <= 0){
-      stringFilled = true;
-    }
-  }
-}
-
-void stackLights(){
-  int notLit = NUM_LEDS - 1; //accounts for odd numbers
-  int currentColor = 0;
-  bool stringFilled = false;
-  bool firstCycle = true;
-  fill_solid(leds, NUM_LEDS, CRGB(0, 0, 0));
-  while(!stringFilled){
-    for(int i = 0; i <= notLit / 2; i++){
-      switch(currentColor){
-        case 0: leds[i] = CRGB(47, 7, 39);
-        break;
-        case 1: leds[i] = CRGB(0, 100, 0);
-        break;
-        case 2: leds[i] = CRGB(0, 100, 100);
-        break;
-      }
-       //set turquoise
-        if(i-3 >= 0){
-          if(i-3 < (notLit/2) - 2){ //determines how many LEDs to keep up, allowing the stack effect.
-          leds[i-3] = CRGB(0, 0, 0); //turn off anything that is no longer within two spaces behind i
-        }
-      }
-      leds(NUM_LEDS/2,NUM_LEDS-1) = leds(NUM_LEDS/2 - 1 ,0);
-      FastLED.show();
-    FastLED.delay(10);
-    }
-    currentColor++;
-    if(currentColor >= 3){
-      currentColor = 0;
-    }
-    FastLED.delay(500);
-    
-    notLit -= 6;
-    if(notLit <= 0){
-      stringFilled = true;
-    }
-  }
-  scroll();
-} 
-
-//void ripple(){
-//  
-//}
-
-
 void randExplosions(){
   int numOfExplosions = 0;
   int ledPosition;
   bool doneWithSplodeys = false;
   while(!doneWithSplodeys){
     ledPosition = rand() % 150;
-      explosion(10, ledPosition, colorSelector(rand() % 5, 150)); //make an explosion over the whole strip
+      explosion(10, ledPosition, modder.colorSelector(rand() % 5, 150)); //make an explosion over the whole strip
       for(int i = 0; i < 15; i++){
         leds.fadeToBlackBy(100);
         FastLED.show();
@@ -278,44 +143,4 @@ void fill_rainbow( struct CRGB * pFirstLED, int numToFill,
         pFirstLED[i] = hsv;
         hsv.hue += deltahue;
     }
-}
-
-void scroll(){
-  newColor = leds; //make copy of initial values
-  int numCycles = 0;
-  int j = 1;
-  while(1){
-    if(j == NUM_LEDS + 1){//if j becomes greater than the amount of LEDS, reset to 1 to take from beginning of array again
-    j = 1;
-    numCycles++;
-    if(numCycles == 10){
-      return;
-    }
-  }
-  for(int i = 0; i <= NUM_LEDS; i++){
-    int diff = i - j;
-    if(diff < 0){ //if the difference is below zero, need to access element that is 'diff' less than number of leds
-      leds[i] = newColor[NUM_LEDS - abs(diff)];
-    }
-    else{
-      leds[i] = newColor[i - j]; //if the difference isn't less than 0 (EX: i = 10, j = 2), simply grab the correct color.
-    }
-  }
-    leds(NUM_LEDS/2,NUM_LEDS-1) = leds(NUM_LEDS/2 - 1 ,0);
-    FastLED.show();
-    FastLED.delay(20);
-    j++; //increment j to reach the next static color
-  }
-}
-
-CRGB colorSelector(int colorNumber, int powerScale){
-        switch(colorNumber){
-        case 0: return CRGB(0,100*(powerScale*.01),0);//red
-        case 1: return CRGB(100*(powerScale*.01),100*(powerScale*.01),0);
-        case 2: return CRGB(100*(powerScale*.01),0,0);//green
-        case 3: return CRGB(100*(powerScale*.01),0,100*(powerScale*.01));
-        case 4: return CRGB(0,0,100*(powerScale*.01));//blue
-        case 5: return CRGB(0,100*(powerScale*.01),100*(powerScale*.01));
-        default: return CRGB(0,0,100*(powerScale*.01));
-      }
 }
