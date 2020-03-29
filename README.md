@@ -3,7 +3,7 @@ For use in in-car custom lighting with a (currently) WS2812B LED setup.
 
 
 # Current To-Do list:
-- [ ] Add button functionality for on-demand mode cycling
+- [X] Add button functionality for on-demand mode cycling
 - [ ] Add photoresistor for auto-dimming
 - [ ] Design and 3D print a custom car interface for any buttons/sensors
 
@@ -11,3 +11,4 @@ For use in in-car custom lighting with a (currently) WS2812B LED setup.
 * Scroll effect
 * Stacking lights
 * Color shifter with scrolling
+* R to B to G linear gradient transition
