@@ -38,6 +38,12 @@ class addedUtils{
 
         void breathing();
 
+		void breathSelect(CRGB color0, CRGB color1, CRGB color2);
+
+		void gradient_transition(struct CRGB firstColor, struct CRGB secondColor);
+
+        CRGB colorSelectorChoose(int colorNumber, int powerScale, CRGB color0, CRGB color1, CRGB color2);
+
 
 };
 

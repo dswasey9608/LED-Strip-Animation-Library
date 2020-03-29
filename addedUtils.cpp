@@ -19,12 +19,21 @@ addedUtils::addedUtils(struct CRGB* leds, int numberLEDS, int cycles){
 CRGB addedUtils::colorSelector(int colorNumber, int powerScale){
 	switch(colorNumber){
         case 0: return CRGB(0,100*(powerScale*.01),0);//red
-        case 1: return CRGB(100*(powerScale*.01),100*(powerScale*.01),0);
+        case 1: return CRGB(50*(powerScale*.01),100*(powerScale*.01),0);
         case 2: return CRGB(100*(powerScale*.01),0,0);//green
         case 3: return CRGB(100*(powerScale*.01),0,100*(powerScale*.01));
         case 4: return CRGB(0,0,100*(powerScale*.01));//blue
         case 5: return CRGB(0,100*(powerScale*.01),100*(powerScale*.01));
         default: return CRGB(0,0,100*(powerScale*.01));
+      }
+}
+
+CRGB addedUtils::colorSelectorChoose(int colorNumber, int powerScale, CRGB color0, CRGB color1, CRGB color2){
+	switch(colorNumber){
+        case 0: return CRGB(color0.g*powerScale*.01, color0.r*powerScale*.01, color0.b*powerScale*.01);
+        case 1: return CRGB(color1.g*powerScale*.01, color1.r*powerScale*.01, color1.b*powerScale*.01);
+        case 2: return CRGB(color2.g*powerScale*.01, color2.r*powerScale*.01, color2.b*powerScale*.01);
+        default: return CRGB(color0.g*powerScale*.01, color0.r*powerScale*.01, color0.b*powerScale*.01);
       }
 }
 
@@ -82,7 +91,7 @@ void addedUtils::stackLights(struct CRGB color0, struct CRGB color1, struct CRGB
         case 2: leds[i] = color2;
         break;
       }
-       //set turquoise
+      
         if(i-3 >= 0){
           if(i-3 < (notLit/2) - 2){ //determines how many LEDs to keep up, allowing the stack effect.
           leds[i-3] = CRGB(0, 0, 0); //turn off anything that is no longer within two spaces behind i
@@ -103,7 +112,6 @@ void addedUtils::stackLights(struct CRGB color0, struct CRGB color1, struct CRGB
       stringFilled = true;
     }
   }
-  breathing(true);
 } 
 
 void addedUtils::breathing(){
@@ -173,12 +181,87 @@ void addedUtils::breathing(bool external){ //cycles between all primary and seco
   
 }
 
+void addedUtils::breathSelect(CRGB color0, CRGB color1, CRGB color2){ //cycles between all primary and secondary colors
+  int powerScale = 0;
+  int increment = 1;
+  bool upIncrement = true;
+  int colorNumber = 0;
+  int numCycles = 0;
+  bool firstCycle = true;
+  bool done = false;
+  struct CRGB* newColor = new struct CRGB[numberLEDS];
+  for(int i = 0; i <= numberLEDS; i++){
+	  newColor[i] = leds[i];
+  }
+  while(1){
+    if(numCycles == 4){
+      break;
+    }
+      struct CRGB singleColor = colorSelectorChoose(colorNumber, powerScale, color0, color1, color2);
+      for(int b = 0; b <= numberLEDS; b++){
+        leds[b] = singleColor;
+      }
+    FastLED.show();
+      
+    if(powerScale == 100){ //float comparison picks up random values and can never find an equivalence.
+      FastLED.delay(100);
+      upIncrement = false;
+    }
+    if(powerScale == 0){
+      if(!firstCycle){
+        colorNumber++;
+      }
+      if(colorNumber >= 6){
+        colorNumber = 0;
+      }
+      FastLED.delay(200);
+      upIncrement = true;
+      numCycles++;
+    }
+    else{
+      FastLED.delay(20);
+    }
+
+    if(upIncrement){
+      powerScale = powerScale + increment;
+    }
+    else{
+      powerScale = powerScale - increment;
+    }
+    firstCycle = false;
+    //Serial.println("Value of powerScale is: ");
+    //Serial.println(powerScale);
+  }
+  delete[] newColor;
+  
+}
+
 void addedUtils::colorScale(int powerScale, struct CRGB* newColor){
 	for(int i = 0; i <= numberLEDS; i++){
 		leds[i].r = newColor[i].r * powerScale * .01;
 		leds[i].g = newColor[i].g * powerScale * .01;
 		leds[i].b = newColor[i].b * powerScale * .01;
 	}
+}
+
+void addedUtils::gradient_transition(struct CRGB firstColor, struct CRGB secondColor) {
+	float startR = firstColor.r;
+	float startG = firstColor.g;
+	float startB = firstColor.b;
+	float stepDistanceR = (firstColor.r - secondColor.r) / 100.0;
+	float stepDistanceG = (firstColor.g - secondColor.g) / 100.0;
+	float stepDistanceB = (firstColor.b - secondColor.b) / 100.0;
+
+	for (int i = 0; i < 100; i++) {
+		startG -= stepDistanceG;
+		startR -= stepDistanceR;
+		startB -= stepDistanceB;
+		leds.fill_solid(CRGB((int)startR, (int)startG, (int)startB));
+		FastLED.show();
+		delay(20);
+	}
+	leds.fill_solid(secondColor);
+	FastLED.show();
 }
 
 FASTLED_NAMESPACE_END
